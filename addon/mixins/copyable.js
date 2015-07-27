@@ -3,7 +3,7 @@ import DS from 'ember-data';
 
 export default Ember.Mixin.create({
   copyable: true,
-  copy: function(options) {
+  copy: function(options, relations) {
     options = options || {};
 
     var _this = this;
@@ -12,7 +12,7 @@ export default Ember.Mixin.create({
       var model = _this.constructor;
       var copy = _this.get('store').createRecord(model.modelName || model.typeKey);
       var queue = [];
-      var relations = {};
+      var relations = relations || {};
       
       model.eachAttribute(function(attr) {
         switch(Ember.typeOf(options[attr])) {
@@ -55,7 +55,7 @@ export default Ember.Mixin.create({
           queue.push(rel.then(function(obj) {
 
             if (obj && obj.get('copyable')) {
-              return obj.copy(passedOptions).then(function(objCopy) {
+              return obj.copy(passedOptions, relations).then(function(objCopy) {
                 copy.set(relName, overwrite || objCopy);
               });
 
@@ -75,7 +75,7 @@ export default Ember.Mixin.create({
               var resolvedCopies =
                 array.map(function(obj) {
                   if (obj.get('copyable')) {
-                    return obj.copy(passedOptions);
+                    return obj.copy(passedOptions, relations);
                   } else {
                     return obj;
                   }
@@ -93,7 +93,7 @@ export default Ember.Mixin.create({
               copy.set(relName, relations[relName]);
             }else {
               if (obj && obj.get('copyable')) {
-                queue.push( obj.copy(passedOptions).then(function(objCopy) {
+                queue.push( obj.copy(passedOptions, relations).then(function(objCopy) {
                   copy.set(relName, overwrite || objCopy);
                 }));
   
@@ -112,7 +112,7 @@ export default Ember.Mixin.create({
             if (objs.get('firstObject.copyable')) {
 
               var copies = objs.map(function(obj) {
-                return obj.copy(passedOptions);
+                return obj.copy(passedOptions, relations);
               });
 
               if (overwrite) {
