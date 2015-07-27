@@ -12,7 +12,8 @@ export default Ember.Mixin.create({
       var model = _this.constructor;
       var copy = _this.get('store').createRecord(model.modelName || model.typeKey);
       var queue = [];
-
+      var relations = {};
+      
       model.eachAttribute(function(attr) {
         switch(Ember.typeOf(options[attr])) {
           case 'undefined':
@@ -25,6 +26,8 @@ export default Ember.Mixin.create({
             copy.set(attr, options[attr]);
         }
       });
+      
+      relations[model.moduleName] = copy;
 
       model.eachRelationship(function(relName, meta) {
         var rel = _this.get(relName);
@@ -86,13 +89,17 @@ export default Ember.Mixin.create({
           if (meta.kind === 'belongsTo') {
             var obj = rel;
 
-            if (obj && obj.get('copyable')) {
-              queue.push( obj.copy(passedOptions).then(function(objCopy) {
-                copy.set(relName, overwrite || objCopy);
-              }));
-
-            } else {
-              copy.set(relName, overwrite || obj);
+            if (Object.keys(relations).indexOf(relName) > -1){
+              copy.set(relName, relations[relName]);
+            }else {
+              if (obj && obj.get('copyable')) {
+                queue.push( obj.copy(passedOptions).then(function(objCopy) {
+                  copy.set(relName, overwrite || objCopy);
+                }));
+  
+              } else {
+                copy.set(relName, overwrite || obj);
+              }
             }
 
           } else {
